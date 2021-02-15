@@ -10,11 +10,22 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@react-native-community/masked-view": "^0.1.10",
+    "@react-native-firebase/admob": "^10.8.0",
+    "@react-native-firebase/app": "^10.8.0",
     "@react-navigation/native": "^5.9.2",
     "@react-navigation/stack": "^5.14.2",
+    "native-base": "^2.15.2",
     "react": "16.13.1",
     "react-native": "0.63.4",
-    "react-native-gesture-handler": "^1.10.1"
+    "react-native-background-downloader": "^2.3.4",
+    "react-native-fs": "^2.16.6",
+    "react-native-gesture-handler": "^1.10.1",
+    "react-native-material-ripple": "^0.9.1",
+    "react-native-paper": "^4.7.1",
+    "react-native-safe-area-context": "^3.1.9",
+    "react-native-vector-icons": "^8.0.0",
+    "react-native-video": "^5.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
