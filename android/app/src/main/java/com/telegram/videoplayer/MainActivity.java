@@ -1,4 +1,4 @@
-package com.teleplayer;
+package com.telegram.videoplayer;
 
 import com.facebook.react.ReactActivity;
 

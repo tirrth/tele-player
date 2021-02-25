@@ -1,80 +1,3 @@
-// import React, {useRef} from 'react';
-// import {
-//   Animated,
-//   Text,
-//   View,
-//   StyleSheet,
-//   Button,
-//   TextInput,
-// } from 'react-native';
-
-// const HomeScreen = () => {
-//   const logoPosition = useRef(new Animated.ValueXY({x: 0, y: 0})).current;
-
-//   const moveLogoToTop = () => {
-//     Animated.timing(logoPosition, {
-//       toValue: {x: 0, y: -100},
-//       duration: 1000,
-//       useNativeDriver: false,
-//     }).start();
-//   };
-
-//   React.useState(() => {
-//     moveLogoToTop();
-//   }, []);
-
-//   return (
-//     <View style={styles.container}>
-//       <Animated.View style={logoPosition.getLayout()}>
-//         <View
-//           style={{
-//             width: 100,
-//             height: 100,
-//             borderRadius: 100 / 2,
-//             backgroundColor: 'red',
-//           }}
-//         />
-//       </Animated.View>
-//       {/* <View style={styles.buttonRow}>
-//         <Button title="Move Logo To Top" onPress={moveLogoToTop} />
-//       </View> */}
-//       <View
-//         style={{
-//           backgroundColor: '#e0e0e0',
-//           borderRadius: 4,
-//           width: '90%',
-//           paddingLeft: 10,
-//         }}>
-//         <TextInput placeholder="Enter Video Link" />
-//       </View>
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   fadingContainer: {
-//     paddingVertical: 8,
-//     paddingHorizontal: 16,
-//     backgroundColor: 'powderblue',
-//   },
-//   fadingText: {
-//     fontSize: 28,
-//     textAlign: 'center',
-//     margin: 10,
-//   },
-//   buttonRow: {
-//     flexDirection: 'row',
-//     marginVertical: 16,
-//   },
-// });
-
-// export default HomeScreen;
-
 import React from 'react';
 import Ripple from 'react-native-material-ripple';
 import {Icon} from 'native-base';
@@ -83,63 +6,252 @@ import {
   Easing,
   StatusBar,
   StyleSheet,
+  Text,
   TextInput,
   View,
+  BackHandler,
+  SafeAreaView,
+  Modal,
+  Linking,
 } from 'react-native';
-import {BannerAd, TestIds, BannerAdSize} from '@react-native-firebase/admob';
-const adUnitId = __DEV__
-  ? TestIds.BANNER
-  : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
+import {Card, IconButton} from 'react-native-paper';
+import {useNetInfo} from '@react-native-community/netinfo';
+import {NATIVE_AD_PLACEMENT_ID, PROMOTED_TELEGRAM_BOT_LINK} from '@env';
+// import {BannerAd, TestIds, BannerAdSize} from '@react-native-firebase/admob';
+// import {BannerView, AdSettings} from 'react-native-fbads';
+
+// const adUnitId = __DEV__
+//   ? TestIds.BANNER
+//   : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+
+import {
+  AdIconView,
+  MediaView,
+  AdChoicesView,
+  TriggerableView,
+  withNativeAd,
+} from 'react-native-fbads';
+import {NativeAdsManager} from 'react-native-fbads';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const adsManager = new NativeAdsManager(NATIVE_AD_PLACEMENT_ID);
+class AdComponent extends React.Component {
+  render() {
+    const {nativeAd} = this.props;
+    return (
+      <Card
+        style={{backgroundColor: '#ffffff', borderRadius: 0}}
+        elevation={16}>
+        <TriggerableView
+          style={{
+            flex: 1,
+            backgroundColor: 'transparent',
+            height: '100%',
+            width: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            zIndex: 100,
+          }}
+        />
+        <View
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <View>
+            <AdIconView
+              style={{
+                width: 50,
+                height: 50,
+                position: 'absolute',
+                left: 0,
+                top: 0,
+              }}
+            />
+          </View>
+          <AdChoicesView
+            style={{position: 'absolute', right: 0, top: 0, zIndex: 1000}}
+          />
+          <MediaView style={{height: 60, width: 120}} />
+          <View>
+            <Text
+              style={{
+                textAlign: 'center',
+                color: '#8d8d8d',
+                paddingHorizontal: 10,
+              }}>
+              {nativeAd.advertiserName} - {nativeAd.socialContext}
+            </Text>
+          </View>
+        </View>
+      </Card>
+    );
+  }
+}
+export const NativeAdComponent = withNativeAd(AdComponent);
 
 const HomeScreen = (props) => {
-  let hey;
+  const [isFirstLaunch, setIsFirstLaunch] = React.useState(null);
+  const netInfo = useNetInfo();
   const [videoLink, setVideoLink] = React.useState('');
-  const opacity = React.useRef(new Animated.Value(10)).current;
-  const translateY = React.useRef(new Animated.Value(0)).current;
+  const textFieldOpacity = React.useRef(new Animated.Value(0)).current;
+  const textFieldTranslateY = React.useRef(new Animated.Value(0)).current;
+  const logoOpacity = React.useRef(new Animated.Value(10)).current;
+  const logoTranslateY = React.useRef(new Animated.Value(70)).current;
+  const logoIconScale = React.useRef(new Animated.Value(0)).current;
+
+  const textNoteMsgOpacity = React.useRef(new Animated.Value(0)).current;
+  const textNoteMsgTranslateY = React.useRef(new Animated.Value(0)).current;
+  const [isAllAnimDone, setAllAnimDone] = React.useState(false);
+
+  const [isHowToModalOpen, setHowToModalVisibility] = React.useState(false);
 
   const animate = () => {
-    Animated.stagger(1000, [
-      Animated.timing(opacity, {
+    Animated.sequence([
+      Animated.timing(logoOpacity, {
         toValue: 1,
         duration: 800,
         easing: Easing.elastic(0.84),
         useNativeDriver: false,
       }).start(),
-      Animated.timing(translateY, {
-        toValue: -100,
+
+      logoIconScaleAnim(1000, Easing.in(Easing.bounce)),
+
+      Animated.timing(logoTranslateY, {
+        delay: 2000,
+        toValue: -70,
         duration: 800,
         useNativeDriver: false,
       }).start(),
+
+      Animated.timing(textNoteMsgOpacity, {
+        delay: 3000,
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: false,
+      }).start(),
+
+      Animated.timing(textNoteMsgTranslateY, {
+        toValue: -50,
+        duration: 800,
+        useNativeDriver: false,
+      }).start(),
+
+      Animated.timing(textFieldOpacity, {
+        delay: 3000,
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: false,
+      }).start(() => {
+        setAllAnimDone(true);
+      }),
+
+      // Animated.timing(textFieldTranslateY, {
+      //   toValue: 0,
+      //   duration: 800,
+      //   useNativeDriver: false,
+      // }).start(),
     ]);
   };
 
-  const animateEvery2Seconds = () => {
-    setInterval(() => {
-      animate();
-    }, 2000);
+  const logoIconScaleAnim = (delay = 0, easing = Easing.elastic(0.84)) => {
+    Animated.timing(logoIconScale, {
+      delay: delay,
+      toValue: 1,
+      duration: 800,
+      easing: easing,
+      useNativeDriver: false,
+    }).start(() => {
+      logoIconShrinkAnim();
+    });
+  };
+
+  const logoIconShrinkAnim = (delay = 0, easing = Easing.elastic(0.84)) => {
+    Animated.timing(logoIconScale, {
+      delay: delay,
+      toValue: 0.9,
+      duration: 800,
+      easing: easing,
+      useNativeDriver: false,
+    }).start(() => {
+      logoIconScaleAnim();
+    });
   };
 
   React.useEffect(() => {
+    AsyncStorage.getItem('alreadyLaunched')
+      .then((value) => {
+        if (value == null) {
+          AsyncStorage.setItem('alreadyLaunched', 'true'); // No need to wait for `setItem` to finish, although you might want to handle errors
+          setIsFirstLaunch(true);
+        } else {
+          setIsFirstLaunch(false);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        setIsFirstLaunch(null);
+      });
+
     animate();
-    // animateEvery2Seconds();
+
+    // AdSettings.addTestDevice('hash');
   }, []);
 
-  const size = opacity.interpolate({
+  const logoSize = logoOpacity.interpolate({
     inputRange: [0, 100],
     outputRange: [0, 10000],
   });
 
-  const animatedStyles = [
+  const logoAnimatedStyles = [
     styles.box,
     {
-      opacity,
-      width: size,
-      height: size,
+      opacity: logoOpacity,
+      width: logoSize,
+      height: logoSize,
     },
     {
       transform: [
         {
-          translateY,
+          translateY: logoTranslateY,
+        },
+      ],
+    },
+  ];
+
+  const logoIconAnimatedStyles = [
+    {
+      transform: [
+        {
+          scale: logoIconScale,
+        },
+      ],
+    },
+  ];
+
+  const textFieldAnimatedStyles = [
+    {
+      opacity: textFieldOpacity,
+    },
+    {
+      transform: [
+        {
+          translateY: textFieldTranslateY,
+        },
+      ],
+    },
+  ];
+
+  const textNoteMsg = [
+    {
+      opacity: textNoteMsgOpacity,
+    },
+    {
+      transform: [
+        {
+          translateY: textNoteMsgTranslateY,
         },
       ],
     },
@@ -153,65 +265,193 @@ const HomeScreen = (props) => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAwareScrollView
+      contentContainerStyle={{...styles.container}}
+      resetScrollToCoords={{x: 0, y: 0}}
+      scrollEnabled={true}>
       <StatusBar hidden={true} />
 
-      <Animated.View style={animatedStyles}>
-        <View
-          style={{
-            height: '100%',
-            width: '100%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Icon name="play" style={{color: '#ffffff', fontSize: 70}} />
-        </View>
-      </Animated.View>
-      <View
-        style={{
-          backgroundColor: '#e8e8e8',
-          borderRadius: 4,
-          width: '90%',
-          position: 'absolute',
-          bottom: 130,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-        <View style={{marginLeft: 5, flex: 1}}>
-          <TextInput
-            placeholder="Enter Telegram Video Link"
-            onChangeText={(video_link) => setVideoLink(video_link)}
-            onSubmitEditing={videoLink ? _onPlayVideoBtnPress : null}
-            autoCapitalize="none"
-          />
-        </View>
-
-        <Ripple
-          style={{marginRight: 5}}
-          rippleContainerBorderRadius={4}
-          onPress={() => _onPlayVideoBtnPress()}
-          disabled={videoLink ? false : true}>
+      <View>
+        <Animated.View style={logoAnimatedStyles}>
           <View
             style={{
-              height: '80%',
-              width: 40,
-              backgroundColor: videoLink ? '#4885ed' : '#cccccc',
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
+              flex: 1,
               justifyContent: 'center',
+              alignItems: 'center',
             }}>
-            <Icon name="play" style={{color: '#ffffff', fontSize: 18}} />
+            <Animated.View style={logoIconAnimatedStyles}>
+              <Icon
+                name="play"
+                style={{
+                  color: '#ffffff',
+                  fontSize: 70,
+                }}
+              />
+            </Animated.View>
           </View>
-        </Ripple>
+        </Animated.View>
       </View>
-      <View
-        style={{position: 'absolute', bottom: 0, left: 0}}
-        ref={(comp) => (hey = comp)}>
-        <BannerAd size={BannerAdSize.ADAPTIVE_BANNER} unitId={adUnitId} />
-      </View>
-    </View>
+
+      {/* {isLogoAnimDone ? ( */}
+      <>
+        <View>
+          <Animated.View style={[textNoteMsg, {width: '90%'}]}>
+            {!netInfo.isConnected && !netInfo.isInternetReachable ? (
+              <Text
+                style={{
+                  textAlign: 'center',
+                  fontSize: 16,
+                  color: '#8d8d8d',
+                  textTransform: 'capitalize',
+                }}>
+                App needs internet connection. Please launch app again after
+                connecting to internet
+              </Text>
+            ) : (
+              <Text
+                style={{
+                  textAlign: 'center',
+                  fontSize: 16,
+                  color: '#8d8d8d',
+                  textTransform: 'capitalize',
+                }}>
+                To know how to generate video link of any telegram video. Click
+                on the{' '}
+                <Icon
+                  type="FontAwesome5"
+                  name="question-circle"
+                  style={{fontSize: 14, color: '#8d8d8d'}}
+                />{' '}
+                given on the above right corner.
+              </Text>
+            )}
+          </Animated.View>
+        </View>
+
+        <View style={{marginTop: 50}}>
+          {netInfo.isConnected && netInfo.isInternetReachable ? (
+            <Animated.View
+              style={[
+                textFieldAnimatedStyles,
+                {
+                  backgroundColor: '#e8e8e8',
+                  borderRadius: 4,
+                  width: '90%',
+                  // position: 'absolute',
+                  // bottom: 130,
+                  height: 48,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                },
+              ]}>
+              <View style={{marginLeft: 5, flex: 1}}>
+                <TextInput
+                  placeholder="Enter Telegram Video Link"
+                  onChangeText={(video_link) => setVideoLink(video_link)}
+                  onSubmitEditing={videoLink ? _onPlayVideoBtnPress : null}
+                  autoCapitalize="none"
+                />
+              </View>
+              <Ripple
+                style={{marginRight: 5}}
+                rippleContainerBorderRadius={4}
+                onPress={() => _onPlayVideoBtnPress()}
+                disabled={videoLink ? false : true}>
+                <View
+                  style={{
+                    height: '80%',
+                    width: 40,
+                    backgroundColor: videoLink ? '#4885ed' : '#cccccc',
+                    borderRadius: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <Icon
+                    name="play"
+                    type="FontAwesome5"
+                    style={{color: '#ffffff', fontSize: 18}}
+                  />
+                </View>
+              </Ripple>
+            </Animated.View>
+          ) : (
+            <Animated.View
+              style={[
+                textFieldAnimatedStyles,
+                {
+                  height: 40,
+                },
+              ]}>
+              <Card
+                style={{paddingVertical: 10, paddingHorizontal: 30}}
+                onPress={() => BackHandler.exitApp()}>
+                <Text>EXIT</Text>
+              </Card>
+            </Animated.View>
+          )}
+        </View>
+      </>
+      {/* ) : null} */}
+
+      {isAllAnimDone ? (
+        <>
+          {!isHowToModalOpen ? (
+            <Card
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                width: 30,
+                height: 30,
+                borderRadius: 30 / 2,
+              }}
+              onPress={() => setHowToModalVisibility(true)}>
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Icon
+                  type="FontAwesome5"
+                  name="question"
+                  style={{fontSize: 13, color: '#454545'}}
+                />
+              </View>
+            </Card>
+          ) : null}
+
+          <View
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              width: '100%',
+            }}>
+            {/* <BannerAd size={BannerAdSize.ADAPTIVE_BANNER} unitId={adUnitId} /> */}
+            {/* <BannerView
+            placementId="195375939041633_195421632370397"
+            type="large"
+            onLoad={() => console.log('onload')}
+            onPress={() => console.log('pressed')}
+            onError={(err) => console.log(err)}
+          /> */}
+            <NativeAdComponent adsManager={adsManager} />
+          </View>
+        </>
+      ) : null}
+
+      {isHowToModalOpen ? (
+        <HowToModal
+          closeModal={() => {
+            setIsFirstLaunch(false);
+            setHowToModalVisibility(false);
+          }}
+        />
+      ) : null}
+    </KeyboardAwareScrollView>
   );
 };
 
@@ -263,7 +503,111 @@ const SECTIONS = [
   },
 ];
 
+class HowToModal extends React.Component {
+  render() {
+    return (
+      <View
+        style={{
+          height: '100%',
+          width: '100%',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          backgroundColor: 'rgba(0,0,0,0.4)',
+        }}>
+        <Modal
+          animationType="fade"
+          onRequestClose={this.props.closeModal}
+          transparent={true}
+          visible={true}
+          presentationStyle="overFullScreen">
+          <View
+            style={{
+              height: '100%',
+              width: '100%',
+              backgroundColor: 'transparent',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <SafeAreaView
+              style={{
+                backgroundColor: '#fff',
+                borderRadius: 6,
+                // height: '70%',
+                width: '90%',
+              }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingLeft: 20,
+                  paddingRight: 6,
+                }}>
+                <Text style={{fontWeight: 'bold', fontSize: 18}}>
+                  Follow Steps
+                </Text>
+                <IconButton icon="check" onPress={this.props.closeModal} />
+              </View>
+              <View style={{...styles.horizontalSeparator}} />
+              <View style={{padding: 10}}>
+                <View style={{flexDirection: 'row', marginBottom: 4}}>
+                  <Text style={{fontWeight: 'bold', fontSize: 16}}>1. </Text>
+                  <Text style={{fontSize: 16, color: '#454545'}}>
+                    <Text
+                      style={{color: '#4285F4'}}
+                      onPress={() => {
+                        const redirect_to = PROMOTED_TELEGRAM_BOT_LINK;
+                        Linking.canOpenURL(redirect_to)
+                          .then((can_open) =>
+                            can_open ? Linking.openURL(redirect_to) : null,
+                          )
+                          .catch((err) => console.log(err));
+                      }}>
+                      Open{' '}
+                      <Icon
+                        type="FontAwesome5"
+                        name="external-link-alt"
+                        style={{color: '#4285F4', fontSize: 12}}
+                      />
+                    </Text>
+                    {'  '}
+                    and follow the bot.
+                  </Text>
+                </View>
+                <View style={{flexDirection: 'row', marginBottom: 4}}>
+                  <Text style={{fontWeight: 'bold', fontSize: 16}}>2. </Text>
+                  <Text style={{fontSize: 16, color: '#454545'}}>
+                    Forward any file to the followed bot.
+                  </Text>
+                </View>
+                <View style={{flexDirection: 'row', marginBottom: 4}}>
+                  <Text style={{fontWeight: 'bold', fontSize: 16}}>3. </Text>
+                  <Text style={{fontSize: 16, color: '#454545'}}>
+                    You will recieve a download link of the video from bot.
+                  </Text>
+                </View>
+                <View style={{flexDirection: 'row', marginBottom: 4}}>
+                  <Text style={{fontWeight: 'bold', fontSize: 16}}>4. </Text>
+                  <Text style={{fontSize: 16, color: '#454545'}}>
+                    Copy the link and paste it into the text field.
+                  </Text>
+                </View>
+              </View>
+            </SafeAreaView>
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+}
+
 const styles = StyleSheet.create({
+  horizontalSeparator: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#ddd',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',

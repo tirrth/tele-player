@@ -10,7 +10,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.13.4",
     "@react-native-community/masked-view": "^0.1.10",
+    "@react-native-community/netinfo": "^5.9.10",
     "@react-native-firebase/admob": "^10.8.0",
     "@react-native-firebase/app": "^10.8.0",
     "@react-navigation/native": "^5.9.2",
@@ -18,14 +20,19 @@
     "native-base": "^2.15.2",
     "react": "16.13.1",
     "react-native": "0.63.4",
-    "react-native-background-downloader": "^2.3.4",
+    "react-native-dotenv": "^2.5.3",
+    "react-native-fbads": "^7.0.3",
+    "react-native-fbsdk": "^3.0.0",
     "react-native-fs": "^2.16.6",
     "react-native-gesture-handler": "^1.10.1",
+    "react-native-keyboard-aware-scroll-view": "^0.9.3",
     "react-native-material-ripple": "^0.9.1",
     "react-native-paper": "^4.7.1",
+    "react-native-rename": "^2.7.0",
     "react-native-safe-area-context": "^3.1.9",
     "react-native-vector-icons": "^8.0.0",
-    "react-native-video": "^5.1.1"
+    "react-native-video": "^5.1.1",
+    "rn-fetch-blob": "^0.12.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",

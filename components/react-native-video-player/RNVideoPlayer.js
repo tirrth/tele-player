@@ -13,10 +13,21 @@ import {
   View,
   Text,
   PermissionsAndroid,
+  ToastAndroid,
 } from 'react-native';
 import RNFS from 'react-native-fs';
-import RNBackgroundDownloader from 'react-native-background-downloader';
+import RNFetchBlob from 'rn-fetch-blob';
 import padStart from 'lodash/padStart';
+
+const _onToastMessageSend = (message) => {
+  ToastAndroid.showWithGravityAndOffset(
+    message,
+    ToastAndroid.SHORT,
+    ToastAndroid.BOTTOM,
+    25,
+    50,
+  );
+};
 
 export default class VideoPlayer extends Component {
   static defaultProps = {
@@ -246,78 +257,49 @@ export default class VideoPlayer extends Component {
       ? this.props.source.uri
       : this.props.source;
 
-    // ------------------------------- With react-native-background-downloader ------------------------------------ //
-    // try {
-    //   await PermissionsAndroid.requestMultiple([
-    //     PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-    //     PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-    //   ]);
-    // } catch (err) {
-    //   console.warn(err);
-    // }
-    // const readGranted = await PermissionsAndroid.check(
-    //   PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-    // );
-    // const writeGranted = await PermissionsAndroid.check(
-    //   PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-    // );
-    // if (!readGranted || !writeGranted) {
-    //   console.log('Read and write permissions have not been granted');
-    //   return;
-    // }
+    console.log(download_link);
+    try {
+      await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+      ]);
+    } catch (err) {
+      console.warn(err);
+    }
+    const readGranted = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+    );
+    const writeGranted = await PermissionsAndroid.check(
+      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+    );
+    if (!readGranted || !writeGranted) {
+      console.log('Read and write permissions have not been granted');
+      return;
+    }
+    var path = `${RNFS.ExternalStorageDirectoryPath}/TelePlayer`;
+    const file_extension = 'mp4';
+    path += `/${parseInt(Math.random() * 1000000000)}.${file_extension}`;
 
-    // RNFS.readDir(RNBackgroundDownloader.directories.documents)
-    //   .then((res) => console.log(res))
-    //   .catch((err) => console.log(err));
+    _onToastMessageSend('Download Started');
+    RNFetchBlob.config({
+      addAndroidDownloads: {
+        useDownloadManager: true,
+        mime: 'video/mp4',
+        title: 'TelePlayer',
+        notification: true,
+        mediaScannable: true,
+        path,
+      },
+    })
+      .fetch('GET', download_link)
+      .then((res) => {
+        _onToastMessageSend('File downloaded successfully');
+        const android = RNFetchBlob.android;
+        android.actionViewIntent(res.path(), 'video/mp4');
+      })
+      .catch((err) => console.log(err));
 
-    // const destination = `${RNBackgroundDownloader.directories.documents}/download.mp4`;
-    // RNBackgroundDownloader.download({
-    //   id: 'video-64746',
-    //   url: download_link,
-    //   destination,
-    // })
-    //   .begin((expectedBytes) => {
-    //     console.log(`Going to download ${expectedBytes} bytes!`);
-    //   })
-    //   .progress((percent) => {
-    //     console.log(`Downloaded: ${percent * 100}%`);
-    //   })
-    //   .done(() => {
-    //     console.log('Download is done!');
-    //   })
-    //   .error((error) => {
-    //     console.log('Download canceled due to error: ', error);
-    //   });
-
-    // ------------------------------------- With RNFS -------------------------------------
-    // try {
-    //   await PermissionsAndroid.requestMultiple([
-    //     PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-    //     PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-    //   ]);
-    // } catch (err) {
-    //   console.warn(err);
-    // }
-    // const readGranted = await PermissionsAndroid.check(
-    //   PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-    // );
-    // const writeGranted = await PermissionsAndroid.check(
-    //   PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-    // );
-    // if (!readGranted || !writeGranted) {
-    //   console.log('Read and write permissions have not been granted');
-    //   return;
-    // }
-    // var path = `${RNFS.ExternalStorageDirectoryPath}/TacApp`;
-    // RNFS.mkdir(path);
-
-    // const fileExtention = (filename) => {
-    //   return /[.]/.exec(filename) ? /[^.]+$/.exec(filename) : undefined;
-    // };
-    // const file_extension = fileExtention(download_link);
-
-    // path += `/${parseInt(Math.random() * 1000000000)}.${file_extension}`;
-
+    // ------------------------- with rn-fs -------------------------//
     // const DownloadFileOptions = {
     //   fromUrl: download_link,
     //   toFile: path,
@@ -325,14 +307,14 @@ export default class VideoPlayer extends Component {
     //   progress: (res) => DownloadProgressCallbackResult(res),
     // };
     // const DownloadProgressCallbackResult = (res) => {
-    //   // console.log(res);
+    //   console.log(res);
     // };
     // const DownloadBeginCallbackResult = (res) => {
-    //   // console.log('begin', res);
+    //   console.log('begin', res);
     // };
     // RNFS.downloadFile(DownloadFileOptions)
     //   .promise.then((res) => {
-    //     this._onToastMessageSent(
+    //     this._onToastMessageSend(
     //       `File Successfully Donwloaded to path ${path}`,
     //     );
     //   })

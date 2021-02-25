@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:662014668851:android:4d12c23107ca05e36fb346",
+        "mobilesdk_app_id": "1:662014668851:android:f0032e8018e322ef6fb346",
         "android_client_info": {
-          "package_name": "com.teleplayer"
+          "package_name": "com.telegram.videoplayer"
         }
       },
       "oauth_client": [
