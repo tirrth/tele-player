@@ -1,16 +1,16 @@
 const config = {
   screens: {
-    Profile: {
-      path: 'profile/:id',
+    VideoPlayback: {
+      path: 'play/:video_url',
       parse: {
-        id: (id) => `${id}`,
+        video_url: (video_url) => `${video_url}`,
       },
     },
   },
 };
 
 const linking = {
-  prefixes: ['https://tacconnect.in'],
+  prefixes: ['https://teleplayer.com', "teleplayer://app"],
   config,
 };
 

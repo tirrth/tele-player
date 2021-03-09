@@ -14,10 +14,13 @@ import {
   Text,
   PermissionsAndroid,
   ToastAndroid,
+  StatusBar,
+  Alert,
 } from 'react-native';
 import RNFS from 'react-native-fs';
 import RNFetchBlob from 'rn-fetch-blob';
 import padStart from 'lodash/padStart';
+import Orientation from 'react-native-orientation-locker';
 
 const _onToastMessageSend = (message) => {
   ToastAndroid.showWithGravityAndOffset(
@@ -38,6 +41,7 @@ export default class VideoPlayer extends Component {
     playWhenInactive: false,
     resizeMode: 'contain',
     isFullscreen: false,
+    isLandscape: false,
     showOnStart: true,
     paused: false,
     repeat: false,
@@ -65,7 +69,8 @@ export default class VideoPlayer extends Component {
 
       isFullscreen:
         this.props.isFullScreen || this.props.resizeMode === 'cover' || false,
-      showTimeRemaining: true,
+      isLandscape: this.props.isLandscape || false,
+      showTimeRemaining: false,
       volumeTrackWidth: 0,
       volumeFillWidth: 0,
       seekerFillWidth: 0,
@@ -107,6 +112,8 @@ export default class VideoPlayer extends Component {
       onHideControls: this.props.onHideControls,
       onLoadStart: this._onLoadStart.bind(this),
       onProgress: this._onProgress.bind(this),
+      onPlaybackStalled: this._onPlaybackStalled.bind(this),
+      onPlaybackResume: this._onPlaybackResume.bind(this),
       onSeek: this._onSeek.bind(this),
       onLoad: this._onLoad.bind(this),
       onPause: this.props.onPause,
@@ -120,8 +127,11 @@ export default class VideoPlayer extends Component {
     this.methods = {
       toggleFullscreen: this._toggleFullscreen.bind(this),
       togglePlayPause: this._togglePlayPause.bind(this),
+      toggleLandscapeMode: this._toggleLandscapeMode.bind(this),
       toggleControls: this._toggleControls.bind(this),
       toggleTimer: this._toggleTimer.bind(this),
+      skipBackward: this._skipBackward.bind(this),
+      skipForward: this._skipForward.bind(this),
     };
 
     /**
@@ -199,6 +209,19 @@ export default class VideoPlayer extends Component {
     }
   }
 
+  _onPlaybackStalled() {
+    let state = this.state;
+    state.loading = true;
+    this.loadAnimation();
+    this.setState(state);
+  }
+
+  _onPlaybackResume() {
+    let state = this.state;
+    state.loading = false;
+    this.setState(state);
+  }
+
   /**
    * When load is finished we hide the load icon
    * and hide the controls. We also set the
@@ -248,77 +271,74 @@ export default class VideoPlayer extends Component {
 
   /**
    * For download we fire listeners that
-   * downlaod the video file as a backgroung process.
+   * download the video file as a background process.
    *
    * @param {object} data The video meta data
    */
-  _onDownload = async () => {
-    const download_link = Object.keys(this.props.source).includes('uri')
-      ? this.props.source.uri
-      : this.props.source;
+  _onDownload = () => {
+    Alert.alert(
+      'Confirmation',
+      'Are you sure you want to download this video?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Download',
+          onPress: async () => {
+            const download_link = Object.keys(this.props.source).includes('uri')
+              ? this.props.source.uri
+              : this.props.source;
 
-    console.log(download_link);
-    try {
-      await PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-      ]);
-    } catch (err) {
-      console.warn(err);
-    }
-    const readGranted = await PermissionsAndroid.check(
-      PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+            console.log(download_link);
+            try {
+              await PermissionsAndroid.requestMultiple([
+                PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+                PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+              ]);
+            } catch (err) {
+              console.warn(err);
+            }
+            const readGranted = await PermissionsAndroid.check(
+              PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+            );
+            const writeGranted = await PermissionsAndroid.check(
+              PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+            );
+            if (!readGranted || !writeGranted) {
+              console.log('Read and write permissions have not been granted');
+              return;
+            }
+            var path = `${RNFS.ExternalStorageDirectoryPath}/TelePlayer`;
+            const file_extension = 'mp4';
+            path += `/${parseInt(
+              Math.random() * 1000000000,
+            )}.${file_extension}`;
+
+            _onToastMessageSend('Download Started');
+            RNFetchBlob.config({
+              addAndroidDownloads: {
+                useDownloadManager: true,
+                mime: 'video/mp4',
+                title: 'TelePlayer',
+                notification: true,
+                mediaScannable: true,
+                path,
+              },
+            })
+              .fetch('GET', download_link)
+              .then((res) => {
+                _onToastMessageSend('File downloaded successfully');
+                const android = RNFetchBlob.android;
+                android.actionViewIntent(res.path(), 'video/mp4');
+              })
+              .catch((err) => console.log(err));
+          },
+        },
+      ],
+      {cancelable: true},
     );
-    const writeGranted = await PermissionsAndroid.check(
-      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-    );
-    if (!readGranted || !writeGranted) {
-      console.log('Read and write permissions have not been granted');
-      return;
-    }
-    var path = `${RNFS.ExternalStorageDirectoryPath}/TelePlayer`;
-    const file_extension = 'mp4';
-    path += `/${parseInt(Math.random() * 1000000000)}.${file_extension}`;
-
-    _onToastMessageSend('Download Started');
-    RNFetchBlob.config({
-      addAndroidDownloads: {
-        useDownloadManager: true,
-        mime: 'video/mp4',
-        title: 'TelePlayer',
-        notification: true,
-        mediaScannable: true,
-        path,
-      },
-    })
-      .fetch('GET', download_link)
-      .then((res) => {
-        _onToastMessageSend('File downloaded successfully');
-        const android = RNFetchBlob.android;
-        android.actionViewIntent(res.path(), 'video/mp4');
-      })
-      .catch((err) => console.log(err));
-
-    // ------------------------- with rn-fs -------------------------//
-    // const DownloadFileOptions = {
-    //   fromUrl: download_link,
-    //   toFile: path,
-    //   begin: (res) => DownloadBeginCallbackResult(res),
-    //   progress: (res) => DownloadProgressCallbackResult(res),
-    // };
-    // const DownloadProgressCallbackResult = (res) => {
-    //   console.log(res);
-    // };
-    // const DownloadBeginCallbackResult = (res) => {
-    //   console.log('begin', res);
-    // };
-    // RNFS.downloadFile(DownloadFileOptions)
-    //   .promise.then((res) => {
-    //     this._onToastMessageSend(
-    //       `File Successfully Donwloaded to path ${path}`,
-    //     );
-    //   })
-    //   .catch((err) => console.log({...err}));
   };
 
   /**
@@ -594,6 +614,18 @@ export default class VideoPlayer extends Component {
     this.setState(state);
   }
 
+  _toggleLandscapeMode() {
+    let state = this.state;
+    state.isLandscape = !state.isLandscape;
+
+    if (state.isLandscape) {
+      Orientation.lockToLandscape();
+    } else {
+      Orientation.lockToPortrait();
+    }
+    this.setState(state);
+  }
+
   /**
    * Toggle between showing time remaining or
    * video duration in the timer control
@@ -602,6 +634,52 @@ export default class VideoPlayer extends Component {
     let state = this.state;
     state.showTimeRemaining = !state.showTimeRemaining;
     this.setState(state);
+  }
+
+  _skipBackward() {
+    let state = this.state;
+    if (state.currentTime - 10 >= 0) {
+      state.currentTime -= 10;
+    } else {
+      state.currentTime = 0;
+    }
+
+    const time = state.currentTime;
+    if (time >= state.duration && !state.loading) {
+      state.paused = true;
+      this.events.onEnd();
+    } else if (state.scrubbing) {
+      state.seeking = false;
+    } else {
+      this.seekTo(time);
+      this.setControlTimeout();
+      state.paused = state.originallyPaused;
+      state.seeking = false;
+    }
+    this.setState({state});
+  }
+
+  _skipForward() {
+    let state = this.state;
+    if (state.currentTime + 10 <= state.duration) {
+      state.currentTime += 10;
+    } else {
+      state.currentTime = state.duration;
+    }
+
+    const time = state.currentTime;
+    if (time >= state.duration && !state.loading) {
+      state.paused = true;
+      this.events.onEnd();
+    } else if (state.scrubbing) {
+      state.seeking = false;
+    } else {
+      this.seekTo(time);
+      this.setControlTimeout();
+      state.paused = state.originallyPaused;
+      state.seeking = false;
+    }
+    this.setState({state});
   }
 
   /**
@@ -631,6 +709,10 @@ export default class VideoPlayer extends Component {
     }
 
     return this.formatTime(this.state.currentTime);
+  }
+
+  totalDuration() {
+    return `${this.formatTime(this.state.duration)}`;
   }
 
   /**
@@ -750,7 +832,7 @@ export default class VideoPlayer extends Component {
    * its track's width.
    *
    * @param {float} val position of the volume handle in px
-   * @return {float} contrained position of the volume handle in px
+   * @return {float} constrained position of the volume handle in px
    */
   constrainToVolumeMinMax(val = 0) {
     if (val <= 0) {
@@ -821,6 +903,12 @@ export default class VideoPlayer extends Component {
     }
   }
 
+  handleOrientation(orientation) {
+    orientation === 'LANDSCAPE-LEFT' || orientation === 'LANDSCAPE-RIGHT'
+      ? this.setState({isLandscape: true})
+      : this.setState({isLandscape: false});
+  }
+
   /**
    * Upon mounting, calculate the position of the volume
    * bar based on the volume property supplied to it.
@@ -833,6 +921,10 @@ export default class VideoPlayer extends Component {
     this.mounted = true;
 
     this.setState(state);
+
+    Orientation.lockToPortrait();
+    this.handleOrientation = this.handleOrientation.bind(this);
+    Orientation.addOrientationListener(this.handleOrientation);
   }
 
   /**
@@ -842,6 +934,9 @@ export default class VideoPlayer extends Component {
   componentWillUnmount() {
     this.mounted = false;
     this.clearControlTimeout();
+
+    Orientation.lockToPortrait();
+    Orientation.removeOrientationListener(this.handleOrientation);
   }
 
   /**
@@ -988,7 +1083,7 @@ export default class VideoPlayer extends Component {
    * consistent <TouchableHighlight>
    * wrapper and styling.
    */
-  renderControl(children, callback, style = {}) {
+  renderControl(children, callback, style = {}, paddingHorizontal = 16) {
     return (
       <TouchableHighlight
         underlayColor="transparent"
@@ -997,7 +1092,7 @@ export default class VideoPlayer extends Component {
           this.resetControlTimeout();
           callback();
         }}
-        style={[styles.controls.control, style]}>
+        style={[styles.controls.control, style, {paddingHorizontal}]}>
         {children}
       </TouchableHighlight>
     );
@@ -1120,19 +1215,26 @@ export default class VideoPlayer extends Component {
     );
   }
 
+  renderRotateButton() {
+    let source =
+      this.state.isLandscape === true
+        ? require('./assets/img/rotate-off.png')
+        : require('./assets/img/rotate-on.png');
+    return this.renderControl(
+      <Image source={source} style={{width: 14, height: 14}} />,
+      this.methods.toggleLandscapeMode,
+      styles.controls.landscapeMode,
+    );
+  }
+
   /**
    * Render bottom control group and wrap it in a holder
    */
   renderBottomControls() {
-    const timerControl = this.props.disableTimer
-      ? this.renderNullControl()
-      : this.renderTimer();
     const seekbarControl = this.props.disableSeekbar
       ? this.renderNullControl()
       : this.renderSeekbar();
-    const playPauseControl = this.props.disablePlayPause
-      ? this.renderNullControl()
-      : this.renderPlayPause();
+    const rotateButton = this.renderRotateButton();
 
     return (
       <Animated.View
@@ -1150,9 +1252,8 @@ export default class VideoPlayer extends Component {
           {seekbarControl}
           <SafeAreaView
             style={[styles.controls.row, styles.controls.bottomControlGroup]}>
-            {playPauseControl}
-            {this.renderTitle()}
-            {timerControl}
+            {this.renderPlayPauseSkipTimer()}
+            {rotateButton}
           </SafeAreaView>
         </ImageBackground>
       </Animated.View>
@@ -1200,9 +1301,6 @@ export default class VideoPlayer extends Component {
     );
   }
 
-  /**
-   * Render the play/pause button and show the respective icon
-   */
   renderPlayPause() {
     let source =
       this.state.paused === true
@@ -1212,6 +1310,50 @@ export default class VideoPlayer extends Component {
       <Image source={source} />,
       this.methods.togglePlayPause,
       styles.controls.playPause,
+      0,
+    );
+  }
+
+  /**
+   * Render the play/pause button and show the respective icon
+   */
+  renderPlayPauseSkipTimer() {
+    const timerControl = this.props.disableTimer
+      ? this.renderNullControl()
+      : this.renderTimer();
+    const playPauseControl = this.props.disablePlayPause
+      ? this.renderNullControl()
+      : this.renderPlayPause();
+    return (
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        {this.renderControl(
+          <Image
+            style={{height: 50, width: 50}}
+            source={require('./assets/img/backward-10.png')}
+          />,
+          this.methods.skipBackward,
+          {},
+          0,
+        )}
+        <View style={{width: 14, alignItems: 'center'}}>
+          {playPauseControl}
+        </View>
+        {this.renderControl(
+          <Image
+            style={{height: 50, width: 50}}
+            source={require('./assets/img/forward-10.png')}
+          />,
+          this.methods.skipForward,
+          {},
+          0,
+        )}
+        {timerControl}
+      </View>
     );
   }
 
@@ -1239,9 +1381,12 @@ export default class VideoPlayer extends Component {
    */
   renderTimer() {
     return this.renderControl(
-      <Text style={styles.controls.timerText}>{this.calculateTime()}</Text>,
+      <Text style={{...styles.controls.timerText}}>
+        {this.calculateTime()} / {this.totalDuration()}
+      </Text>,
       this.methods.toggleTimer,
       styles.controls.timer,
+      0,
     );
   }
 
@@ -1272,6 +1417,31 @@ export default class VideoPlayer extends Component {
       );
     }
     return null;
+  }
+
+  renderSkipButtons() {
+    if (!this.state.error && !this.state.loading) {
+      return (
+        <View style={{...styles.loader.container, width: '100%'}}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: 1,
+            }}>
+            <Image
+              style={{height: 100, width: 100}}
+              source={require('./assets/img/backward-10.png')}
+            />
+            <Image
+              style={{height: 100, width: 100}}
+              source={require('./assets/img/forward-10.png')}
+            />
+          </View>
+        </View>
+      );
+    }
   }
 
   renderError() {
@@ -1307,12 +1477,18 @@ export default class VideoPlayer extends Component {
             muted={this.state.muted}
             rate={this.state.rate}
             onLoadStart={this.events.onLoadStart}
+            onPlaybackStalled={this.events.onPlaybackStalled}
+            onPlaybackResume={this.events.onPlaybackResume}
             onProgress={this.events.onProgress}
             onError={this.events.onError}
             onLoad={this.events.onLoad}
             onEnd={this.events.onEnd}
             onSeek={this.events.onSeek}
-            style={[styles.player.video, this.styles.videoStyle]}
+            style={[
+              styles.player.video,
+              this.styles.videoStyle,
+              {opacity: this.state.loading ? 0.4 : 1},
+            ]}
             source={this.props.source}
           />
           {this.renderError()}
@@ -1448,7 +1624,13 @@ const styles = {
     },
     playPause: {
       position: 'relative',
-      width: 80,
+      // width: 80,
+      zIndex: 0,
+    },
+    landscapeMode: {
+      position: 'relative',
+      // width: 80,
+      // backgroundColor:'green',
       zIndex: 0,
     },
     title: {
@@ -1461,13 +1643,13 @@ const styles = {
       textAlign: 'center',
     },
     timer: {
-      width: 80,
+      // width: 120,
     },
     timerText: {
       backgroundColor: 'transparent',
       color: '#FFF',
       fontSize: 11,
-      textAlign: 'right',
+      // textAlign: 'center',
     },
   }),
   volume: StyleSheet.create({

@@ -1,21 +1,13 @@
 import React from 'react';
 import RNVideoPlayer from './react-native-video-player/RNVideoPlayer';
-import {StyleSheet} from 'react-native';
+import {StatusBar, StyleSheet} from 'react-native';
 import {INTERSTITIAL_AD_PLACEMENT_ID} from '@env';
-// import {INTERSTITIAL_AD_PLACEMENT_ID} from '@env';
-// import {
-//   InterstitialAd,
-//   TestIds,
-//   AdEventType,
-// } from '@react-native-firebase/admob';
-
-// Interstitial Ad
-// const adUnitId = __DEV__
-//   ? TestIds.INTERSTITIAL
-//   : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
-// const interstitialAd = InterstitialAd.createForAdRequest(adUnitId);
-
 import {InterstitialAdManager} from 'react-native-fbads';
+// // import {INTERSTITIAL_AD_PLACEMENT_ID} from '@env';
+// * import { InterstitialAd, TestIds, AdEventType } from '@react-native-firebase/admob';
+// todo Interstitial Ad
+// ? const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+// ! const interstitialAd = InterstitialAd.createForAdRequest(adUnitId);
 
 const VideoPlayer = (props) => {
   const {video_url} = props.route.params;
@@ -54,14 +46,17 @@ const VideoPlayer = (props) => {
   }, []);
 
   return (
-    <RNVideoPlayer
-      source={{uri: video_url}}
-      doubleTapTime={100}
-      controlAnimationTiming={0}
-      title="Video Player"
-      navigator={props.navigation}
-      seekColor="#DB4437"
-    />
+    <>
+      <StatusBar hidden />
+      <RNVideoPlayer
+        source={{uri: video_url}}
+        doubleTapTime={100}
+        controlAnimationTiming={0}
+        title="Video Player"
+        navigator={props.navigation}
+        seekColor="#DB4437"
+      />
+    </>
   );
 };
 

@@ -13,8 +13,10 @@ import {
   SafeAreaView,
   Modal,
   Linking,
+  Dimensions,
 } from 'react-native';
-import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
+import {ScrollView} from 'react-native-gesture-handler';
+import Clipboard from '@react-native-community/clipboard';
 import {Card, IconButton} from 'react-native-paper';
 import {useNetInfo} from '@react-native-community/netinfo';
 import {NATIVE_AD_PLACEMENT_ID, PROMOTED_TELEGRAM_BOT_LINK} from '@env';
@@ -121,7 +123,7 @@ const HomeScreen = (props) => {
 
       Animated.timing(logoTranslateY, {
         delay: 2000,
-        toValue: -70,
+        toValue: -60,
         duration: 800,
         useNativeDriver: false,
       }).start(),
@@ -180,6 +182,11 @@ const HomeScreen = (props) => {
     });
   };
 
+  const fetchCopiedText = async () => {
+    const copied_text = await Clipboard.getString();
+    copied_text && setVideoLink(copied_text);
+  };
+
   React.useEffect(() => {
     AsyncStorage.getItem('alreadyLaunched')
       .then((value) => {
@@ -196,7 +203,7 @@ const HomeScreen = (props) => {
       });
 
     animate();
-
+    fetchCopiedText();
     // AdSettings.addTestDevice('hash');
   }, []);
 
@@ -265,193 +272,197 @@ const HomeScreen = (props) => {
   };
 
   return (
-    <KeyboardAwareScrollView
-      contentContainerStyle={{...styles.container}}
-      resetScrollToCoords={{x: 0, y: 0}}
-      scrollEnabled={true}>
-      <StatusBar hidden={true} />
-
-      <View>
-        <Animated.View style={logoAnimatedStyles}>
+    <>
+      <StatusBar backgroundColor={isHowToModalOpen ? 'rgba(0,0,0,0.4)' : 'transparent'} barStyle="dark-content" />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View
+          style={{
+            ...styles.container,
+            height: Dimensions.get('window').height - StatusBar.currentHeight,
+            width: Dimensions.get('window').width,
+          }}>
           <View
             style={{
-              flex: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
+              width: 30,
+              height: 30,
+              alignSelf: 'flex-end',
+              marginRight: 12,
+              marginTop: 12,
             }}>
-            <Animated.View style={logoIconAnimatedStyles}>
-              <Icon
-                name="play"
+            {!isHowToModalOpen ? (
+              <Card
                 style={{
-                  color: '#ffffff',
-                  fontSize: 70,
+                  opacity: isAllAnimDone ? 1 : 0,
+                  flex: 1,
+                  borderRadius: 30 / 2,
                 }}
-              />
-            </Animated.View>
-          </View>
-        </Animated.View>
-      </View>
-
-      {/* {isLogoAnimDone ? ( */}
-      <>
-        <View>
-          <Animated.View style={[textNoteMsg, {width: '90%'}]}>
-            {!netInfo.isConnected && !netInfo.isInternetReachable ? (
-              <Text
-                style={{
-                  textAlign: 'center',
-                  fontSize: 16,
-                  color: '#8d8d8d',
-                  textTransform: 'capitalize',
-                }}>
-                App needs internet connection. Please launch app again after
-                connecting to internet
-              </Text>
-            ) : (
-              <Text
-                style={{
-                  textAlign: 'center',
-                  fontSize: 16,
-                  color: '#8d8d8d',
-                  textTransform: 'capitalize',
-                }}>
-                To know how to generate video link of any telegram video. Click
-                on the{' '}
-                <Icon
-                  type="FontAwesome5"
-                  name="question-circle"
-                  style={{fontSize: 14, color: '#8d8d8d'}}
-                />{' '}
-                given on the above right corner.
-              </Text>
-            )}
-          </Animated.View>
-        </View>
-
-        <View style={{marginTop: 50}}>
-          {netInfo.isConnected && netInfo.isInternetReachable ? (
-            <Animated.View
-              style={[
-                textFieldAnimatedStyles,
-                {
-                  backgroundColor: '#e8e8e8',
-                  borderRadius: 4,
-                  width: '90%',
-                  // position: 'absolute',
-                  // bottom: 130,
-                  height: 48,
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                },
-              ]}>
-              <View style={{marginLeft: 5, flex: 1}}>
-                <TextInput
-                  placeholder="Enter Telegram Video Link"
-                  onChangeText={(video_link) => setVideoLink(video_link)}
-                  onSubmitEditing={videoLink ? _onPlayVideoBtnPress : null}
-                  autoCapitalize="none"
-                />
-              </View>
-              <Ripple
-                style={{marginRight: 5}}
-                rippleContainerBorderRadius={4}
-                onPress={() => _onPlayVideoBtnPress()}
-                disabled={videoLink ? false : true}>
+                onPress={() => setHowToModalVisibility(true)}>
                 <View
                   style={{
-                    height: '80%',
-                    width: 40,
-                    backgroundColor: videoLink ? '#4885ed' : '#cccccc',
-                    borderRadius: 2,
-                    display: 'flex',
+                    flex: 1,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
                   <Icon
-                    name="play"
                     type="FontAwesome5"
-                    style={{color: '#ffffff', fontSize: 18}}
+                    name="question"
+                    style={{fontSize: 13, color: '#454545'}}
                   />
                 </View>
-              </Ripple>
-            </Animated.View>
-          ) : (
-            <Animated.View
-              style={[
-                textFieldAnimatedStyles,
-                {
-                  height: 40,
-                },
-              ]}>
-              <Card
-                style={{paddingVertical: 10, paddingHorizontal: 30}}
-                onPress={() => BackHandler.exitApp()}>
-                <Text>EXIT</Text>
               </Card>
-            </Animated.View>
-          )}
-        </View>
-      </>
-      {/* ) : null} */}
-
-      {isAllAnimDone ? (
-        <>
-          {!isHowToModalOpen ? (
-            <Card
-              style={{
-                position: 'absolute',
-                top: 12,
-                right: 12,
-                width: 30,
-                height: 30,
-                borderRadius: 30 / 2,
-              }}
-              onPress={() => setHowToModalVisibility(true)}>
-              <View
-                style={{
-                  flex: 1,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                <Icon
-                  type="FontAwesome5"
-                  name="question"
-                  style={{fontSize: 13, color: '#454545'}}
-                />
-              </View>
-            </Card>
-          ) : null}
+            ) : null}
+          </View>
 
           <View
             style={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
+              flex: 1,
+              width: '100%',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <View>
+              <Animated.View style={logoAnimatedStyles}>
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
+                  <Animated.View style={logoIconAnimatedStyles}>
+                    <Icon
+                      name="play"
+                      style={{
+                        color: '#ffffff',
+                        fontSize: 70,
+                      }}
+                    />
+                  </Animated.View>
+                </View>
+              </Animated.View>
+            </View>
+
+            <>
+              <View>
+                <Animated.View style={[textNoteMsg, {width: '90%'}]}>
+                  {!netInfo.isConnected && !netInfo.isInternetReachable ? (
+                    <Text
+                      style={{
+                        textAlign: 'center',
+                        fontSize: 16,
+                        color: '#8d8d8d',
+                        textTransform: 'capitalize',
+                      }}>
+                      App needs internet connection. Please launch app again
+                      after connecting to internet
+                    </Text>
+                  ) : (
+                    <Text
+                      style={{
+                        textAlign: 'center',
+                        fontSize: 16,
+                        color: '#8d8d8d',
+                        textTransform: 'capitalize',
+                      }}>
+                      To know how to generate video link of any telegram video.
+                      Click on the{' '}
+                      <Icon
+                        type="FontAwesome5"
+                        name="question-circle"
+                        style={{fontSize: 14, color: '#8d8d8d'}}
+                      />{' '}
+                      given on the above right corner.
+                    </Text>
+                  )}
+                </Animated.View>
+              </View>
+
+              <View style={{marginTop: 40, marginBottom:10}}>
+                {netInfo.isConnected && netInfo.isInternetReachable ? (
+                  <Animated.View
+                    style={[
+                      textFieldAnimatedStyles,
+                      {
+                        backgroundColor: '#e8e8e8',
+                        borderRadius: 4,
+                        width: '90%',
+                        height: 48,
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      },
+                    ]}>
+                    <View style={{marginLeft: 5, marginRight: 10, flex: 1}}>
+                      <TextInput
+                        value={videoLink}
+                        placeholder="Enter Telegram Video Link"
+                        onChangeText={(video_link) => setVideoLink(video_link)}
+                        onSubmitEditing={
+                          videoLink ? _onPlayVideoBtnPress : null
+                        }
+                        autoCapitalize="none"
+                      />
+                    </View>
+                    <Ripple
+                      style={{marginRight: 5}}
+                      rippleContainerBorderRadius={4}
+                      onPress={() => _onPlayVideoBtnPress()}
+                      disabled={videoLink ? false : true}>
+                      <View
+                        style={{
+                          height: '80%',
+                          width: 40,
+                          backgroundColor: videoLink ? '#4885ed' : '#cccccc',
+                          borderRadius: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                        <Icon
+                          name="play"
+                          type="FontAwesome5"
+                          style={{color: '#ffffff', fontSize: 18}}
+                        />
+                      </View>
+                    </Ripple>
+                  </Animated.View>
+                ) : (
+                  <Animated.View
+                    style={[
+                      textFieldAnimatedStyles,
+                      {
+                        height: 40,
+                      },
+                    ]}>
+                    <Card
+                      style={{paddingVertical: 10, paddingHorizontal: 30}}
+                      onPress={() => BackHandler.exitApp()}>
+                      <Text>EXIT</Text>
+                    </Card>
+                  </Animated.View>
+                )}
+              </View>
+            </>
+          </View>
+
+          <View
+            style={{
+              opacity: isAllAnimDone ? 1 : 0,
               width: '100%',
             }}>
-            {/* <BannerAd size={BannerAdSize.ADAPTIVE_BANNER} unitId={adUnitId} /> */}
-            {/* <BannerView
-            placementId="195375939041633_195421632370397"
-            type="large"
-            onLoad={() => console.log('onload')}
-            onPress={() => console.log('pressed')}
-            onError={(err) => console.log(err)}
-          /> */}
             <NativeAdComponent adsManager={adsManager} />
           </View>
-        </>
-      ) : null}
 
-      {isHowToModalOpen ? (
-        <HowToModal
-          closeModal={() => {
-            setIsFirstLaunch(false);
-            setHowToModalVisibility(false);
-          }}
-        />
-      ) : null}
-    </KeyboardAwareScrollView>
+          {isHowToModalOpen ? (
+            <HowToModal
+              closeModal={() => {
+                setIsFirstLaunch(false);
+                setHowToModalVisibility(false);
+              }}
+            />
+          ) : null}
+        </View>
+      </ScrollView>
+    </>
   );
 };
 
@@ -508,7 +519,7 @@ class HowToModal extends React.Component {
     return (
       <View
         style={{
-          height: '100%',
+          height: Dimensions.get('window').height,
           width: '100%',
           position: 'absolute',
           top: 0,
@@ -584,7 +595,7 @@ class HowToModal extends React.Component {
                 <View style={{flexDirection: 'row', marginBottom: 4}}>
                   <Text style={{fontWeight: 'bold', fontSize: 16}}>3. </Text>
                   <Text style={{fontSize: 16, color: '#454545'}}>
-                    You will recieve a download link of the video from bot.
+                    You will receive a download link of the video from bot.
                   </Text>
                 </View>
                 <View style={{flexDirection: 'row', marginBottom: 4}}>
@@ -609,8 +620,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ddd',
   },
   container: {
-    flex: 1,
-    justifyContent: 'center',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   box: {
