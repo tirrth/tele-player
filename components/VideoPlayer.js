@@ -38,7 +38,7 @@ const VideoPlayer = (props) => {
         console.log('didClick: ', didClick);
       })
       .catch((error) => {
-        console.log('Err', ...error);
+        console.log('Err', error);
       });
 
     // Will show it if already loaded, or wait for it to load and show it.
@@ -47,7 +47,7 @@ const VideoPlayer = (props) => {
 
   return (
     <>
-      <StatusBar hidden />
+      <StatusBar backgroundColor='#000000' barStyle='light-content' showHideTransition='slide' />
       <RNVideoPlayer
         source={{uri: video_url}}
         doubleTapTime={100}

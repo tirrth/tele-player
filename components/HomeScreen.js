@@ -23,9 +23,7 @@ import {NATIVE_AD_PLACEMENT_ID, PROMOTED_TELEGRAM_BOT_LINK} from '@env';
 // import {BannerAd, TestIds, BannerAdSize} from '@react-native-firebase/admob';
 // import {BannerView, AdSettings} from 'react-native-fbads';
 
-// const adUnitId = __DEV__
-//   ? TestIds.BANNER
-//   : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
+// const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
 
 import {
   AdIconView,
@@ -273,7 +271,7 @@ const HomeScreen = (props) => {
 
   return (
     <>
-      <StatusBar backgroundColor={isHowToModalOpen ? 'rgba(0,0,0,0.4)' : 'transparent'} barStyle="dark-content" />
+      <StatusBar showHideTransition='slide' backgroundColor={isHowToModalOpen ? 'rgba(0,0,0,0.4)' : 'transparent'} barStyle="dark-content" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View
           style={{
@@ -333,7 +331,8 @@ const HomeScreen = (props) => {
                       name="play"
                       style={{
                         color: '#ffffff',
-                        fontSize: 70,
+                        fontSize: 55,
+                        marginLeft:8
                       }}
                     />
                   </Animated.View>
@@ -625,7 +624,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   box: {
-    borderRadius: 6,
+    // borderRadius: 6,
+    borderRadius: 200,
     // backgroundColor: '#61dafb',
     backgroundColor: '#4885ed',
   },

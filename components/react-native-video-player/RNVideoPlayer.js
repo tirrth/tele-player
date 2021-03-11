@@ -21,6 +21,12 @@ import RNFS from 'react-native-fs';
 import RNFetchBlob from 'rn-fetch-blob';
 import padStart from 'lodash/padStart';
 import Orientation from 'react-native-orientation-locker';
+import {InterstitialAdManager} from 'react-native-fbads';
+import {
+  INTERSTITIAL_AD_PLACEMENT_ID,
+  SHOW_INTERSTITIAL_AD_REPEATEDLY,
+  INTERSTITIAL_AD_REPETITION_TIME_IN_MINUTE,
+} from '@env';
 
 const _onToastMessageSend = (message) => {
   ToastAndroid.showWithGravityAndOffset(
@@ -51,6 +57,7 @@ export default class VideoPlayer extends Component {
     rate: 1,
   };
 
+  previousAdTime = 0;
   constructor(props) {
     super(props);
 
@@ -161,6 +168,9 @@ export default class VideoPlayer extends Component {
         marginBottom: new Animated.Value(0),
         opacity: new Animated.Value(initialValue),
       },
+      centerControl: {
+        opacity: new Animated.Value(initialValue),
+      },
       topControl: {
         marginTop: new Animated.Value(0),
         opacity: new Animated.Value(initialValue),
@@ -253,6 +263,20 @@ export default class VideoPlayer extends Component {
    */
   _onProgress(data = {}) {
     let state = this.state;
+
+    // Show an advertisement after every 10 minutes
+    const formattedSeconds = Math.floor(this.state.currentTime % 60);
+    if (
+      `${SHOW_INTERSTITIAL_AD_REPEATEDLY}`.toLowerCase() == 'true' &&
+      formattedSeconds %
+        (parseInt(INTERSTITIAL_AD_REPETITION_TIME_IN_MINUTE) * 60) ==
+        0 &&
+      formattedSeconds != this.previousAdTime
+    ) {
+      this.showFacebookAdvertisement();
+      this.previousAdTime = formattedSeconds;
+    }
+
     if (!state.scrubbing) {
       state.currentTime = data.currentTime;
 
@@ -268,6 +292,17 @@ export default class VideoPlayer extends Component {
       this.setState(state);
     }
   }
+
+  showFacebookAdvertisement = () => {
+    const placementId = INTERSTITIAL_AD_PLACEMENT_ID;
+    InterstitialAdManager.showAd(placementId)
+      .then((didClick) => {
+        console.log('didClick: ', didClick);
+      })
+      .catch((error) => {
+        console.log('Err', error);
+      });
+  };
 
   /**
    * For download we fire listeners that
@@ -455,7 +490,7 @@ export default class VideoPlayer extends Component {
   /**
    * Animation to hide controls. We fade the
    * display to 0 then move them off the
-   * screen so they're not interactable
+   * screen so they're not interactive
    */
   hideControlAnimation() {
     Animated.parallel([
@@ -466,6 +501,11 @@ export default class VideoPlayer extends Component {
       }),
       Animated.timing(this.animations.topControl.marginTop, {
         toValue: -100,
+        duration: this.props.controlAnimationTiming,
+        useNativeDriver: false,
+      }),
+      Animated.timing(this.animations.centerControl.opacity, {
+        toValue: 0,
         duration: this.props.controlAnimationTiming,
         useNativeDriver: false,
       }),
@@ -498,6 +538,11 @@ export default class VideoPlayer extends Component {
         toValue: 0,
         useNativeDriver: false,
         duration: this.props.controlAnimationTiming,
+      }),
+      Animated.timing(this.animations.centerControl.opacity, {
+        toValue: 1,
+        duration: this.props.controlAnimationTiming,
+        useNativeDriver: false,
       }),
       Animated.timing(this.animations.bottomControl.opacity, {
         toValue: 1,
@@ -905,8 +950,8 @@ export default class VideoPlayer extends Component {
 
   handleOrientation(orientation) {
     orientation === 'LANDSCAPE-LEFT' || orientation === 'LANDSCAPE-RIGHT'
-      ? this.setState({isLandscape: true})
-      : this.setState({isLandscape: false});
+      ? (this.setState({isLandscape: true}), StatusBar.setHidden(true, 'slide'))
+      : (this.setState({isLandscape: false}), StatusBar.setHidden(false, 'slide'));
   }
 
   /**
@@ -937,6 +982,8 @@ export default class VideoPlayer extends Component {
 
     Orientation.lockToPortrait();
     Orientation.removeOrientationListener(this.handleOrientation);
+
+    StatusBar.setHidden(false);
   }
 
   /**
@@ -1004,6 +1051,7 @@ export default class VideoPlayer extends Component {
        */
       onPanResponderRelease: (evt, gestureState) => {
         const time = this.calculateTimeFromSeekerPosition();
+
         let state = this.state;
         if (time >= state.duration && !state.loading) {
           state.paused = true;
@@ -1011,6 +1059,16 @@ export default class VideoPlayer extends Component {
         } else if (state.scrubbing) {
           state.seeking = false;
         } else {
+          const previousTime = state.currentTime;
+          if (
+            `${SHOW_INTERSTITIAL_AD_REPEATEDLY}`.toLowerCase() == 'true' &&
+            time - previousTime >=
+              parseInt(INTERSTITIAL_AD_REPETITION_TIME_IN_MINUTE) * 60
+          ) {
+            this.showFacebookAdvertisement();
+            this.previousAdTime = time;
+          }
+
           this.seekTo(time);
           this.setControlTimeout();
           state.paused = state.originallyPaused;
@@ -1235,6 +1293,9 @@ export default class VideoPlayer extends Component {
       ? this.renderNullControl()
       : this.renderSeekbar();
     const rotateButton = this.renderRotateButton();
+    const timerControl = this.props.disableTimer
+      ? this.renderNullControl()
+      : this.renderTimer();
 
     return (
       <Animated.View
@@ -1252,7 +1313,7 @@ export default class VideoPlayer extends Component {
           {seekbarControl}
           <SafeAreaView
             style={[styles.controls.row, styles.controls.bottomControlGroup]}>
-            {this.renderPlayPauseSkipTimer()}
+            {timerControl}
             {rotateButton}
           </SafeAreaView>
         </ImageBackground>
@@ -1306,55 +1367,60 @@ export default class VideoPlayer extends Component {
       this.state.paused === true
         ? require('./assets/img/play.png')
         : require('./assets/img/pause.png');
+    const size = this.state.paused ? 26 : 34;
     return this.renderControl(
-      <Image source={source} />,
-      this.methods.togglePlayPause,
+      <Image source={source} style={{height: size, width: size}} />,
+      this.state.showControls ? this.methods.togglePlayPause : this.methods.toggleControls,
       styles.controls.playPause,
       0,
     );
   }
 
   /**
-   * Render the play/pause button and show the respective icon
+   * Render the play/pause & skip button and show the respective icons
    */
-  renderPlayPauseSkipTimer() {
-    const timerControl = this.props.disableTimer
-      ? this.renderNullControl()
-      : this.renderTimer();
+  renderCenterControls() {
     const playPauseControl = this.props.disablePlayPause
       ? this.renderNullControl()
       : this.renderPlayPause();
-    return (
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-        {this.renderControl(
-          <Image
-            style={{height: 50, width: 50}}
-            source={require('./assets/img/backward-10.png')}
-          />,
-          this.methods.skipBackward,
-          {},
-          0,
-        )}
-        <View style={{width: 14, alignItems: 'center'}}>
-          {playPauseControl}
-        </View>
-        {this.renderControl(
-          <Image
-            style={{height: 50, width: 50}}
-            source={require('./assets/img/forward-10.png')}
-          />,
-          this.methods.skipForward,
-          {},
-          0,
-        )}
-        {timerControl}
-      </View>
-    );
+    return !this.state.loading && !this.state.error ? (
+      <Animated.View
+        style={[
+          styles.controls.center,
+          {
+            opacity: this.animations.centerControl.opacity,
+          },
+        ]}>
+        <SafeAreaView
+          style={[
+            styles.controls.row,
+            styles.controls.centerControlGroup,
+            {justifyContent: 'space-evenly'},
+          ]}>
+          {this.renderControl(
+            <Image
+              style={{height: 80, width: 80, marginLeft: 10}}
+              source={require('./assets/img/backward-10.png')}
+            />,
+            this.state.showControls ? this.methods.skipBackward : this.methods.toggleControls,
+            {},
+            0,
+          )}
+          <View style={{width: 85, alignItems: 'center'}}>
+            {playPauseControl}
+          </View>
+          {this.renderControl(
+            <Image
+              style={{height: 80, width: 80, marginRight: 10}}
+              source={require('./assets/img/forward-10.png')}
+            />,
+            this.state.showControls ? this.methods.skipForward : this.methods.toggleControls,
+            {},
+            0,
+          )}
+        </SafeAreaView>
+      </Animated.View>
+    ) : null;
   }
 
   /**
@@ -1386,7 +1452,6 @@ export default class VideoPlayer extends Component {
       </Text>,
       this.methods.toggleTimer,
       styles.controls.timer,
-      0,
     );
   }
 
@@ -1471,6 +1536,10 @@ export default class VideoPlayer extends Component {
           <Video
             {...this.props}
             ref={(videoPlayer) => (this.player.ref = videoPlayer)}
+            selectedVideoTrack={{
+              type: 'resolution',
+              value: 0,
+            }}
             resizeMode={this.state.resizeMode}
             volume={this.state.volume}
             paused={this.state.paused}
@@ -1487,13 +1556,17 @@ export default class VideoPlayer extends Component {
             style={[
               styles.player.video,
               this.styles.videoStyle,
-              {opacity: this.state.loading ? 0.4 : 1},
+              {
+                opacity:
+                  this.state.loading || this.state.showControls ? 0.4 : 1,
+              },
             ]}
             source={this.props.source}
           />
           {this.renderError()}
           {this.renderLoader()}
           {this.renderTopControls()}
+          {this.renderCenterControls()}
           {this.renderBottomControls()}
         </View>
       </TouchableWithoutFeedback>
@@ -1591,9 +1664,14 @@ const styles = {
       alignItems: 'stretch',
       justifyContent: 'flex-start',
     },
+    center: {
+      alignItems: 'stretch',
+      flex: 1,
+      justifyContent: 'center',
+    },
     bottom: {
       alignItems: 'stretch',
-      flex: 2,
+      flex: 1,
       justifyContent: 'flex-end',
     },
     topControlGroup: {
@@ -1604,6 +1682,13 @@ const styles = {
       width: null,
       margin: 12,
       marginBottom: 18,
+    },
+    centerControlGroup: {
+      alignSelf: 'stretch',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexDirection: 'row',
+      width: null,
     },
     bottomControlGroup: {
       alignSelf: 'stretch',
@@ -1684,7 +1769,8 @@ const styles = {
   seekbar: StyleSheet.create({
     container: {
       alignSelf: 'stretch',
-      height: 28,
+      // height: 20,
+      marginBottom:16,
       marginLeft: 20,
       marginRight: 20,
     },
