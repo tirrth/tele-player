@@ -1,33 +1,33 @@
 {
   "project_info": {
-    "project_number": "969886627419",
-    "project_id": "tg-video-player",
-    "storage_bucket": "tg-video-player.appspot.com"
+    "project_number": "662014668851",
+    "project_id": "teleplayer-7beec",
+    "storage_bucket": "teleplayer-7beec.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:969886627419:android:f4f6bfc62f3188993e317e",
+        "mobilesdk_app_id": "1:662014668851:android:f0032e8018e322ef6fb346",
         "android_client_info": {
           "package_name": "com.telegram.videoplayer"
         }
       },
       "oauth_client": [
         {
-          "client_id": "969886627419-6uj0jhaloqqgbg8nasfe7r5oikg9iom7.apps.googleusercontent.com",
+          "client_id": "662014668851-abv7qmin15m984ptolideidkovmnh7f4.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCMPgms2mJCcFeipw1x_7421Jqf5D3zw6E"
+          "current_key": "AIzaSyCJ12le5AsxjZhNMn7GUZk2A6_-kHbKD2o"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "969886627419-6uj0jhaloqqgbg8nasfe7r5oikg9iom7.apps.googleusercontent.com",
+              "client_id": "662014668851-abv7qmin15m984ptolideidkovmnh7f4.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

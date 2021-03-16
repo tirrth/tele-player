@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">TelePlayer</string>
-    <string name="facebook_app_id">195375939041633</string>
+    <string name="facebook_app_id_old">195375939041633</string>
+    <string name="facebook_app_id">481752083013042</string>
 </resources>

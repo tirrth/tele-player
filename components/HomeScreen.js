@@ -271,7 +271,11 @@ const HomeScreen = (props) => {
 
   return (
     <>
-      <StatusBar showHideTransition='slide' backgroundColor={isHowToModalOpen ? 'rgba(0,0,0,0.4)' : 'transparent'} barStyle="dark-content" />
+      <StatusBar
+        showHideTransition="slide"
+        backgroundColor={isHowToModalOpen ? 'rgba(0,0,0,0.4)' : 'transparent'}
+        barStyle="dark-content"
+      />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View
           style={{
@@ -332,7 +336,7 @@ const HomeScreen = (props) => {
                       style={{
                         color: '#ffffff',
                         fontSize: 55,
-                        marginLeft:8
+                        marginLeft: 8,
                       }}
                     />
                   </Animated.View>
@@ -375,7 +379,7 @@ const HomeScreen = (props) => {
                 </Animated.View>
               </View>
 
-              <View style={{marginTop: 40, marginBottom:10}}>
+              <View style={{marginTop: 40, marginBottom: 10}}>
                 {netInfo.isConnected && netInfo.isInternetReachable ? (
                   <Animated.View
                     style={[
@@ -445,6 +449,9 @@ const HomeScreen = (props) => {
 
           <View
             style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
               opacity: isAllAnimDone ? 1 : 0,
               width: '100%',
             }}>
