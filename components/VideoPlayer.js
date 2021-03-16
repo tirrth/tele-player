@@ -1,8 +1,8 @@
 import React from 'react';
 import RNVideoPlayer from './react-native-video-player/RNVideoPlayer';
 import {StatusBar, StyleSheet} from 'react-native';
-import {INTERSTITIAL_AD_PLACEMENT_ID} from '@env';
-import {InterstitialAdManager} from 'react-native-fbads';
+// import {INTERSTITIAL_AD_PLACEMENT_ID} from '@env';
+// import {InterstitialAdManager} from 'react-native-fbads';
 // // import {INTERSTITIAL_AD_PLACEMENT_ID} from '@env';
 // * import { InterstitialAd, TestIds, AdEventType } from '@react-native-firebase/admob';
 // todo Interstitial Ad
@@ -12,38 +12,45 @@ import {InterstitialAdManager} from 'react-native-fbads';
 const VideoPlayer = (props) => {
   const {video_url} = props.route.params;
 
-  React.useEffect(() => {
-    // interstitialAd.onAdEvent((type) => {
-    //   if (type === AdEventType.LOADED) {
-    //     interstitialAd.show();
-    //     console.log('InterstitialAd adLoaded');
-    //   } else if (type === AdEventType.ERROR) {
-    //     console.warn('InterstitialAd => Error');
-    //   } else if (type === AdEventType.OPENED) {
-    //     console.log('InterstitialAd => adOpened');
-    //   } else if (type === AdEventType.CLICKED) {
-    //     console.log('InterstitialAd => adClicked');
-    //   } else if (type === AdEventType.LEFT_APPLICATION) {
-    //     console.log('InterstitialAd => adLeft_App');
-    //   } else if (type === AdEventType.CLOSED) {
-    //     console.log('InterstitialAd => adClosed');
-    //     // interstitialAd.load();
-    //   }
-    // });
-    // interstitialAd.load();
+  // const showAd = () => {
+  //   const placementId = INTERSTITIAL_AD_PLACEMENT_ID;
+  //   InterstitialAdManager.preloadAd(placementId)
+  //     .then((didClick) => {
+  //       console.log('didClick: ', didClick);
+  //     })
+  //     .catch((error) => {
+  //       console.log('Err', error);
+  //     });
 
-    const placementId = INTERSTITIAL_AD_PLACEMENT_ID;
-    InterstitialAdManager.preloadAd(placementId)
-      .then((didClick) => {
-        console.log('didClick: ', didClick);
-      })
-      .catch((error) => {
-        console.log('Err', error);
-      });
+  //   // Will show it if already loaded, or wait for it to load and show it.
+  //   InterstitialAdManager.showPreloadedAd(placementId);
+  // }
 
-    // Will show it if already loaded, or wait for it to load and show it.
-    InterstitialAdManager.showPreloadedAd(placementId);
-  }, []);
+  // React.useEffect(() => {
+  //   // interstitialAd.onAdEvent((type) => {
+  //   //   if (type === AdEventType.LOADED) {
+  //   //     interstitialAd.show();
+  //   //     console.log('InterstitialAd adLoaded');
+  //   //   } else if (type === AdEventType.ERROR) {
+  //   //     console.warn('InterstitialAd => Error');
+  //   //   } else if (type === AdEventType.OPENED) {
+  //   //     console.log('InterstitialAd => adOpened');
+  //   //   } else if (type === AdEventType.CLICKED) {
+  //   //     console.log('InterstitialAd => adClicked');
+  //   //   } else if (type === AdEventType.LEFT_APPLICATION) {
+  //   //     console.log('InterstitialAd => adLeft_App');
+  //   //   } else if (type === AdEventType.CLOSED) {
+  //   //     console.log('InterstitialAd => adClosed');
+  //   //     // interstitialAd.load();
+  //   //   }
+  //   // });
+  //   // interstitialAd.load();
+  //   showAd();
+    
+  //   return (() => {
+  //     showAd();
+  //   })
+  // }, []);
 
   return (
     <>

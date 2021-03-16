@@ -959,6 +959,9 @@ export default class VideoPlayer extends Component {
    * bar based on the volume property supplied to it.
    */
   componentDidMount() {
+    // Show Advertisement
+    this.showFacebookAdvertisement();
+
     const position = this.calculateVolumePositionFromVolume();
     let state = this.state;
     this.setVolumePosition(position);
@@ -977,6 +980,9 @@ export default class VideoPlayer extends Component {
    * timeout less it fire in the prev/next scene
    */
   componentWillUnmount() {
+    // Show Advertisement
+    this.showFacebookAdvertisement();
+
     this.mounted = false;
     this.clearControlTimeout();
 
@@ -1769,8 +1775,8 @@ const styles = {
   seekbar: StyleSheet.create({
     container: {
       alignSelf: 'stretch',
-      // height: 20,
-      marginBottom:16,
+      height: 20,
+      marginBottom: -4,
       marginLeft: 20,
       marginRight: 20,
     },
