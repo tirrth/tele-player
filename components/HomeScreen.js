@@ -14,26 +14,30 @@ import {
   Modal,
   Linking,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
+import LogoIcon from '../assets/logo_icon_white.svg';
+import LinearGradient from 'react-native-linear-gradient';
 import {ScrollView} from 'react-native-gesture-handler';
 import Clipboard from '@react-native-community/clipboard';
 import {Card, IconButton} from 'react-native-paper';
 import {useNetInfo} from '@react-native-community/netinfo';
-import {NATIVE_AD_PLACEMENT_ID, PROMOTED_TELEGRAM_BOT_LINK} from '@env';
-// import {BannerAd, TestIds, BannerAdSize} from '@react-native-firebase/admob';
-// import {BannerView, AdSettings} from 'react-native-fbads';
-
-// const adUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-xxxxxxxxxxxxx/yyyyyyyyyyyyyy';
-
+import {
+  NATIVE_AD_PLACEMENT_ID,
+  PROMOTED_TELEGRAM_BOT_LINK,
+  NODE_SERVER_ENDPOINT,
+  GET_STREAMTAPE_VIDEO_URL_API_KEY,
+} from '@env';
+import HTMLParser from 'react-native-html-parser';
 import {
   AdIconView,
   MediaView,
   AdChoicesView,
   TriggerableView,
   withNativeAd,
+  NativeAdsManager,
 } from 'react-native-fbads';
-import {NativeAdsManager} from 'react-native-fbads';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 const adsManager = new NativeAdsManager(NATIVE_AD_PLACEMENT_ID);
 class AdComponent extends React.Component {
@@ -43,47 +47,75 @@ class AdComponent extends React.Component {
       <Card
         style={{backgroundColor: '#ffffff', borderRadius: 0}}
         elevation={16}>
-        <TriggerableView
-          style={{
-            flex: 1,
-            backgroundColor: 'transparent',
-            height: '100%',
-            width: '100%',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            zIndex: 100,
-          }}
-        />
         <View
           style={{
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-          <View>
-            <AdIconView
-              style={{
-                width: 50,
-                height: 50,
-                position: 'absolute',
-                left: 0,
-                top: 0,
-              }}
-            />
-          </View>
           <AdChoicesView
-            style={{position: 'absolute', right: 0, top: 0, zIndex: 1000}}
+            location="topRight"
+            style={{
+              position: 'absolute',
+              backgroundColor: '#e0e0e0',
+              right: 0,
+              top: 0,
+              zIndex: 1000,
+            }}
           />
-          <MediaView style={{height: 60, width: 120}} />
-          <View>
-            <Text
+          <View style={{margin: 12}}>
+            <MediaView style={{width: 1, height: 1}} />
+            <View
               style={{
-                textAlign: 'center',
-                color: '#8d8d8d',
-                paddingHorizontal: 10,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
               }}>
-              {nativeAd.advertiserName} - {nativeAd.socialContext}
-            </Text>
+              <View>
+                <AdIconView
+                  style={{
+                    width: 80,
+                    height: 80,
+                    flex: 1,
+                  }}
+                />
+              </View>
+              <View style={{paddingHorizontal: 10, flex: 1}}>
+                <TriggerableView style={{marginRight: 8}}>
+                  <Text>
+                    {nativeAd.headline ||
+                      'No headline given for this advertisement'}
+                  </Text>
+                </TriggerableView>
+                <TriggerableView>
+                  <Text style={{color: '#8d8d8d'}}>
+                    {nativeAd.bodyText ||
+                      'No description given for this advertisement'}
+                  </Text>
+                </TriggerableView>
+              </View>
+            </View>
+            <View>
+              <TriggerableView
+                style={{
+                  marginTop: 10,
+                  backgroundColor: '#32CD32',
+                  borderRadius: 6,
+                  padding: 10,
+                  width: '100%',
+                  textAlignVertical: 'center',
+                  textAlign: 'center',
+                }}>
+                <Text
+                  style={{
+                    textTransform: 'uppercase',
+                    color: '#fff',
+                    fontSize: 16,
+                  }}>
+                  {nativeAd.callToActionText}
+                </Text>
+              </TriggerableView>
+            </View>
           </View>
         </View>
       </Card>
@@ -92,8 +124,7 @@ class AdComponent extends React.Component {
 }
 export const NativeAdComponent = withNativeAd(AdComponent);
 
-const HomeScreen = (props) => {
-  const [isFirstLaunch, setIsFirstLaunch] = React.useState(null);
+const HomeScreen = props => {
   const netInfo = useNetInfo();
   const [videoLink, setVideoLink] = React.useState('');
   const textFieldOpacity = React.useRef(new Animated.Value(0)).current;
@@ -107,6 +138,7 @@ const HomeScreen = (props) => {
   const [isAllAnimDone, setAllAnimDone] = React.useState(false);
 
   const [isHowToModalOpen, setHowToModalVisibility] = React.useState(false);
+  const [isBtnLoading, setBtnLoading] = React.useState(false);
 
   const animate = () => {
     Animated.sequence([
@@ -121,7 +153,7 @@ const HomeScreen = (props) => {
 
       Animated.timing(logoTranslateY, {
         delay: 2000,
-        toValue: -60,
+        toValue: -90,
         duration: 800,
         useNativeDriver: false,
       }).start(),
@@ -134,7 +166,7 @@ const HomeScreen = (props) => {
       }).start(),
 
       Animated.timing(textNoteMsgTranslateY, {
-        toValue: -50,
+        toValue: -80,
         duration: 800,
         useNativeDriver: false,
       }).start(),
@@ -147,12 +179,6 @@ const HomeScreen = (props) => {
       }).start(() => {
         setAllAnimDone(true);
       }),
-
-      // Animated.timing(textFieldTranslateY, {
-      //   toValue: 0,
-      //   duration: 800,
-      //   useNativeDriver: false,
-      // }).start(),
     ]);
   };
 
@@ -180,38 +206,92 @@ const HomeScreen = (props) => {
     });
   };
 
+  function toBool(val) {
+    return val == 'true' || val == '1';
+  }
+
+  const _getStreamTapeVideoLink = async url => {
+    return await axios.get(
+      NODE_SERVER_ENDPOINT + GET_STREAMTAPE_VIDEO_URL_API_KEY,
+      {
+        params: {url: encodeURI(url)},
+      },
+    );
+  };
+
+  async function _onPlayVideoBtnPress(video_url = videoLink) {
+    let regex = /[?&]([^=#]+)=([^&#]*)/g,
+      urlParams = {},
+      match;
+    while ((match = regex.exec(video_url))) {
+      urlParams[match[1]] = match[2];
+    }
+    const is_streamtape_video_url =
+      toBool(urlParams.is_streamtape_video) ||
+      video_url.includes('https://streamtape.com/v/') ||
+      video_url.includes('http://streamtape.com/v/') ||
+      video_url.includes('https://www.streamtape.com/v/') ||
+      video_url.includes('http://www.streamtape.com/v/');
+    if (is_streamtape_video_url) {
+      setBtnLoading(true);
+      await _getStreamTapeVideoLink(video_url)
+        .then(res => {
+          console.log(res);
+          video_url = res.data.streamtape_video_url || video_url;
+          setBtnLoading(false);
+        })
+        .catch(err => {
+          console.log({...err});
+          setBtnLoading(false);
+        });
+    }
+
+    props.navigation.navigate('VideoPlayer', {
+      video_url,
+    });
+  }
+
   const fetchCopiedText = async () => {
     const copied_text = await Clipboard.getString();
     copied_text && setVideoLink(copied_text);
   };
 
+  const _openVideoPlayer = (url = '') => {
+    if (url.includes('teleplayer://app/play/url/')) {
+      url = url.replace('teleplayer://app/play/url/', '');
+    } else if (url.includes('https://teleplayer.com/play/url/')) {
+      url = url.replace('https://teleplayer.com/play/url/', '');
+    } else if (url.includes('https://www.teleplayer.com/play/url/')) {
+      url = url.replace('https://www.teleplayer.com/play/url/', '');
+    }
+
+    if (url) {
+      setVideoLink(url);
+      _onPlayVideoBtnPress(url);
+    }
+  };
+
   React.useEffect(() => {
-    AsyncStorage.getItem('alreadyLaunched')
-      .then((value) => {
-        if (value == null) {
-          AsyncStorage.setItem('alreadyLaunched', 'true'); // No need to wait for `setItem` to finish, although you might want to handle errors
-          setIsFirstLaunch(true);
-        } else {
-          setIsFirstLaunch(false);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setIsFirstLaunch(null);
-      });
+    Linking.addEventListener('url', ({url}) => {
+      url && _openVideoPlayer(url);
+    });
 
     animate();
     fetchCopiedText();
-    // AdSettings.addTestDevice('hash');
+
+    return () => {
+      Linking.removeEventListener('url', ({url}) => {
+        url && _openVideoPlayer(url);
+      });
+    };
   }, []);
 
   const logoSize = logoOpacity.interpolate({
     inputRange: [0, 100],
-    outputRange: [0, 10000],
+    outputRange: [0, 11000],
   });
 
   const logoAnimatedStyles = [
-    styles.box,
     {
       opacity: logoOpacity,
       width: logoSize,
@@ -261,13 +341,6 @@ const HomeScreen = (props) => {
       ],
     },
   ];
-
-  const _onPlayVideoBtnPress = () => {
-    console.log(videoLink);
-    props.navigation.navigate('VideoPlayer', {
-      video_url: videoLink,
-    });
-  };
 
   return (
     <>
@@ -324,23 +397,24 @@ const HomeScreen = (props) => {
             }}>
             <View>
               <Animated.View style={logoAnimatedStyles}>
-                <View
-                  style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <Animated.View style={logoIconAnimatedStyles}>
-                    <Icon
-                      name="play"
-                      style={{
-                        color: '#ffffff',
-                        fontSize: 55,
-                        marginLeft: 8,
-                      }}
-                    />
-                  </Animated.View>
-                </View>
+                <LinearGradient
+                  start={{x: 1, y: 0}}
+                  end={{x: 0, y: 1}}
+                  colors={['#31A6F6', '#195DE6']}
+                  style={{height: '100%', width: '100%', borderRadius: 200}}>
+                  <View
+                    style={{
+                      flex: 1,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                    <Animated.View style={logoIconAnimatedStyles}>
+                      <View style={{marginLeft: 9}}>
+                        <LogoIcon height={44} width={44} />
+                      </View>
+                    </Animated.View>
+                  </View>
+                </LinearGradient>
               </Animated.View>
             </View>
 
@@ -379,7 +453,7 @@ const HomeScreen = (props) => {
                 </Animated.View>
               </View>
 
-              <View style={{marginTop: 40, marginBottom: 10}}>
+              <View style={{marginBottom: 80}}>
                 {netInfo.isConnected && netInfo.isInternetReachable ? (
                   <Animated.View
                     style={[
@@ -398,7 +472,7 @@ const HomeScreen = (props) => {
                       <TextInput
                         value={videoLink}
                         placeholder="Enter Telegram Video Link"
-                        onChangeText={(video_link) => setVideoLink(video_link)}
+                        onChangeText={video_link => setVideoLink(video_link)}
                         onSubmitEditing={
                           videoLink ? _onPlayVideoBtnPress : null
                         }
@@ -410,22 +484,29 @@ const HomeScreen = (props) => {
                       rippleContainerBorderRadius={4}
                       onPress={() => _onPlayVideoBtnPress()}
                       disabled={videoLink ? false : true}>
-                      <View
+                      <LinearGradient
+                        start={{x: 1, y: 0}}
+                        end={{x: 0, y: 1}}
+                        colors={
+                          videoLink
+                            ? ['#31A6F6', '#195DE6']
+                            : ['#cccccc', '#cccccc']
+                        }
                         style={{
                           height: '80%',
                           width: 40,
-                          backgroundColor: videoLink ? '#4885ed' : '#cccccc',
                           borderRadius: 2,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          paddingLeft: isBtnLoading ? 0 : 3,
                         }}>
-                        <Icon
-                          name="play"
-                          type="FontAwesome5"
-                          style={{color: '#ffffff', fontSize: 18}}
-                        />
-                      </View>
+                        {isBtnLoading ? (
+                          <ActivityIndicator color="#FFFFFF" size={18} />
+                        ) : (
+                          <LogoIcon height={18} width={18} />
+                        )}
+                      </LinearGradient>
                     </Ripple>
                   </Animated.View>
                 ) : (
@@ -459,12 +540,7 @@ const HomeScreen = (props) => {
           </View>
 
           {isHowToModalOpen ? (
-            <HowToModal
-              closeModal={() => {
-                setIsFirstLaunch(false);
-                setHowToModalVisibility(false);
-              }}
-            />
+            <HowToModal closeModal={() => setHowToModalVisibility(false)} />
           ) : null}
         </View>
       </ScrollView>
@@ -576,10 +652,10 @@ class HowToModal extends React.Component {
                       onPress={() => {
                         const redirect_to = PROMOTED_TELEGRAM_BOT_LINK;
                         Linking.canOpenURL(redirect_to)
-                          .then((can_open) =>
+                          .then(can_open =>
                             can_open ? Linking.openURL(redirect_to) : null,
                           )
-                          .catch((err) => console.log(err));
+                          .catch(err => console.log(err));
                       }}>
                       Open{' '}
                       <Icon
@@ -629,12 +705,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  box: {
-    // borderRadius: 6,
-    borderRadius: 200,
-    // backgroundColor: '#61dafb',
-    backgroundColor: '#4885ed',
   },
 });
 

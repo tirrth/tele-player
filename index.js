@@ -2,26 +2,30 @@
  * @format
  */
 
-import {AppRegistry} from 'react-native';
+import {AppRegistry, Linking} from 'react-native';
 import App from './App';
 import {name as appName} from './app.json';
+import PushNotification from 'react-native-push-notification';
 
-import admob, {MaxAdContentRating} from '@react-native-firebase/admob';
-
-admob()
-  .setRequestConfiguration({
-    // Update all future requests suitable for parental guidance
-    maxAdContentRating: MaxAdContentRating.PG,
-
-    // Indicates that you want your content treated as child-directed for purposes of COPPA.
-    tagForChildDirectedTreatment: true,
-
-    // Indicates that you want the ad request to be handled in a
-    // manner suitable for users under the age of consent.
-    tagForUnderAgeOfConsent: true,
-  })
-  .then(() => {
-    // Request config successfully set!
-  });
+PushNotification.configure({
+  // Must be outside of any component LifeCycle (such as `componentDidMount`).
+  // (required) Called when a remote is received or opened, or local notification is opened
+  onNotification: async function (remoteMessage) {
+    console.log('NOTIFICATION:', remoteMessage);
+    if (remoteMessage.data?.redirect_to) {
+      const can_open_url = await Linking.canOpenURL(
+        remoteMessage.data.redirect_to,
+      );
+      if (can_open_url) {
+        console.log('Opening url - ', remoteMessage.data.redirect_to);
+        await Linking.openURL(remoteMessage.data.redirect_to).catch(err => {
+          console.log(err);
+        });
+      } else {
+        console.log("Can't open url - ", remoteMessage.data.redirect_to);
+      }
+    }
+  },
+});
 
 AppRegistry.registerComponent(appName, () => App);

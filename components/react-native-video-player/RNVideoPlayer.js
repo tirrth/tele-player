@@ -28,7 +28,7 @@ import {
   INTERSTITIAL_AD_REPETITION_TIME_IN_MINUTE,
 } from '@env';
 
-const _onToastMessageSend = (message) => {
+const _onToastMessageSend = message => {
   ToastAndroid.showWithGravityAndOffset(
     message,
     ToastAndroid.SHORT,
@@ -296,10 +296,10 @@ export default class VideoPlayer extends Component {
   showFacebookAdvertisement = () => {
     const placementId = INTERSTITIAL_AD_PLACEMENT_ID;
     InterstitialAdManager.showAd(placementId)
-      .then((didClick) => {
+      .then(didClick => {
         console.log('didClick: ', didClick);
       })
-      .catch((error) => {
+      .catch(error => {
         console.log('Err', error);
       });
   };
@@ -363,12 +363,12 @@ export default class VideoPlayer extends Component {
               },
             })
               .fetch('GET', download_link)
-              .then((res) => {
+              .then(res => {
                 _onToastMessageSend('File downloaded successfully');
                 const android = RNFetchBlob.android;
                 android.actionViewIntent(res.path(), 'video/mp4');
               })
-              .catch((err) => console.log(err));
+              .catch(err => console.log(err));
           },
         },
       ],
@@ -951,7 +951,8 @@ export default class VideoPlayer extends Component {
   handleOrientation(orientation) {
     orientation === 'LANDSCAPE-LEFT' || orientation === 'LANDSCAPE-RIGHT'
       ? (this.setState({isLandscape: true}), StatusBar.setHidden(true, 'slide'))
-      : (this.setState({isLandscape: false}), StatusBar.setHidden(false, 'slide'));
+      : (this.setState({isLandscape: false}),
+        StatusBar.setHidden(false, 'slide'));
   }
 
   /**
@@ -980,9 +981,6 @@ export default class VideoPlayer extends Component {
    * timeout less it fire in the prev/next scene
    */
   componentWillUnmount() {
-    // Show Advertisement
-    this.showFacebookAdvertisement();
-
     this.mounted = false;
     this.clearControlTimeout();
 
@@ -1338,7 +1336,7 @@ export default class VideoPlayer extends Component {
         {...this.player.seekPanResponder.panHandlers}>
         <View
           style={styles.seekbar.track}
-          onLayout={(event) =>
+          onLayout={event =>
             (this.player.seekerWidth = event.nativeEvent.layout.width)
           }
           pointerEvents={'none'}>
@@ -1376,7 +1374,9 @@ export default class VideoPlayer extends Component {
     const size = this.state.paused ? 26 : 34;
     return this.renderControl(
       <Image source={source} style={{height: size, width: size}} />,
-      this.state.showControls ? this.methods.togglePlayPause : this.methods.toggleControls,
+      this.state.showControls
+        ? this.methods.togglePlayPause
+        : this.methods.toggleControls,
       styles.controls.playPause,
       0,
     );
@@ -1408,7 +1408,9 @@ export default class VideoPlayer extends Component {
               style={{height: 80, width: 80, marginLeft: 10}}
               source={require('./assets/img/backward-10.png')}
             />,
-            this.state.showControls ? this.methods.skipBackward : this.methods.toggleControls,
+            this.state.showControls
+              ? this.methods.skipBackward
+              : this.methods.toggleControls,
             {},
             0,
           )}
@@ -1420,7 +1422,9 @@ export default class VideoPlayer extends Component {
               style={{height: 80, width: 80, marginRight: 10}}
               source={require('./assets/img/forward-10.png')}
             />,
-            this.state.showControls ? this.methods.skipForward : this.methods.toggleControls,
+            this.state.showControls
+              ? this.methods.skipForward
+              : this.methods.toggleControls,
             {},
             0,
           )}
@@ -1541,7 +1545,7 @@ export default class VideoPlayer extends Component {
         <View style={[styles.player.container, this.styles.containerStyle]}>
           <Video
             {...this.props}
-            ref={(videoPlayer) => (this.player.ref = videoPlayer)}
+            ref={videoPlayer => (this.player.ref = videoPlayer)}
             selectedVideoTrack={{
               type: 'resolution',
               value: 0,

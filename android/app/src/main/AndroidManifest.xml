@@ -1,9 +1,10 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest 
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools"
   package="com.telegram.videoplayer">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
       android:name=".MainApplication"
@@ -13,25 +14,736 @@
       android:usesCleartextTraffic="true"
       android:allowBackup="false"
       android:theme="@style/AppTheme">
+
       <!-- added meta-data and activity for facebook ad integration -->
       <activity
-          android:name="com.facebook.ads.InterstitialAdActivity"
-          android:configChanges="keyboardHidden|orientation" />
-      <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id"/>
+        android:name="com.facebook.ads.InterstitialAdActivity"
+        android:configChanges="keyboardHidden|orientation" />
+      <meta-data 
+        android:name="com.facebook.sdk.ApplicationId" 
+        android:value="@string/facebook_app_id" />
       <!-- (EXIT) - added meta-data and activity for facebook ad integration -->
+
+      <meta-data
+        android:name="com.google.firebase.messaging.default_notification_icon"
+        android:resource="@drawable/notification_icon" />
+      <meta-data
+        tools:replace="android:resource"
+        android:name="com.google.firebase.messaging.default_notification_color"
+        android:resource="@color/notification_color_blue" />
+
+      <!-- Change the value to true to enable pop-up for in foreground on receiving remote notifications (for prevent duplicating while showing local notifications set this to false) -->
+      <meta-data 
+        android:name="com.dieam.reactnativepushnotification.notification_foreground"
+        android:value="false" />
+      <!-- Change the resource name to your App's accent color - or any other color you want -->
+      <meta-data
+        android:name="com.dieam.reactnativepushnotification.notification_color"
+        android:resource="@color/notification_color_blue" />
+
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
         android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
         android:launchMode="singleTask"
-        android:screenOrientation="portrait"
         android:windowSoftInputMode="adjustResize">
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
-      </activity>
-      <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" />
-    </application>
 
+        <intent-filter
+          android:icon="@mipmap/ic_launcher"
+          android:label="@string/app_player_name"
+          android:priority="50">
+            <action android:name="android.intent.action.VIEW" />
+
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+
+            <data
+              android:scheme="https"
+              android:host="teleplayer.com"
+            />
+            <data
+              android:scheme="https"
+              android:host="www.teleplayer.com"
+            />
+            <data
+              android:scheme="teleplayer"
+              android:host="app"
+            />
+        </intent-filter>
+
+        <!--
+            Capture file open requests (pathPattern is honoured) where no
+            MIME type is provided in the Intent.  An Intent with a null
+            MIME type will never be matched by a filter with a set MIME
+            type, so we need a second intent-filter if we wish to also
+            match files with this extension and a non-null MIME type
+            (even if it is non-null but zero length).
+        -->
+        <intent-filter
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_player_name"
+            android:priority="50">
+            <action android:name="android.intent.action.VIEW" />
+
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+
+            <!--
+                Work around Android's ugly primitive PatternMatcher
+                implementation that can't cope with finding a . early in
+                the path unless it's explicitly matched.
+            -->
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\.mp4" 
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern="*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\.mp4" 
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern="*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\.mkv" 
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern="*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\.mkv" 
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern="*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\.webm" 
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern="*\\..*\\.webm"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\.webm"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\.webm" 
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern="*\\..*\\.webm"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\.webm"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <!-- <data
+              android:scheme="file"
+              android:pathPattern=".*\\.mp4" 
+            />
+
+            <data
+              android:scheme="file"
+              android:pathPattern="*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="file"
+              android:pathPattern=".*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="file"
+              android:pathPattern=".*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="file"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="file"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="file"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            /> -->
+        </intent-filter>
+
+        <!--
+            Capture file open requests (pathPattern is honoured) where a
+            (possibly blank) MIME type is provided in the Intent.  This
+            filter may only be necessary for supporting ES File Explorer,
+            which has the probably buggy behaviour of using an Intent
+            with a MIME type that is set but zero-length.  It's
+            impossible to match such a type except by using a global
+            wildcard.
+        -->
+        <intent-filter
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_player_name"
+            android:priority="50">
+            <action android:name="android.intent.action.VIEW" />
+
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+
+            <!--
+                Work around Android's ugly primitive PatternMatcher
+                implementation that can't cope with finding a . early in
+                the path unless it's explicitly matched.
+            -->
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\.mp4"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\.mp4"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\.mkv"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\.mkv"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.mkv"
+            />
+
+            <data
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\.webm"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="http"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\.webm"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <data 
+              android:scheme="https"
+              android:host="*"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.webm"
+            />
+
+            <!-- <data
+              android:scheme="file"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\.mp4"
+            />
+
+            <data 
+              android:scheme="file"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="file"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="file"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="file"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="file"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            />
+
+            <data 
+              android:scheme="file"
+              android:mimeType="*/*"
+              android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.mp4"
+            /> -->
+        </intent-filter>
+      </activity>
+    </application>
 </manifest>
